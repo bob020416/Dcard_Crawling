@@ -19,16 +19,11 @@ def scroll_down_page(driver, actions, iterations):
         for _ in range(4):
             actions.send_keys(Keys.ARROW_DOWN).perform()
 
-def scrape_articles(driver, query):
-    driver.get(f"https://www.dcard.tw/search?query={query}")
-    sleep(15)
-    seen = set()
+def scrape_articles(driver):
     wait = WebDriverWait(driver, 40)
     articles = wait.until(EC.presence_of_all_elements_located((By.TAG_NAME, "article")))
-    tmp = [article.find_element(By.TAG_NAME, "a").get_attribute("href") for article in articles]
-    for url in tmp:
-        seen.add(url)
-    return seen
+    urls = [article.find_element(By.TAG_NAME, "a").get_attribute("href") for article in articles] #fetch url 
+    return urls
 
 def scrape_article_details(driver, urls):
     posts = []
@@ -53,11 +48,24 @@ def save_to_csv(data, filename):
 
 def main(query):
     driver, actions = initialize_driver()
-    scroll_down_page(driver, actions, 10) #Change the iteratin number for crawling for longer time 
-    urls = scrape_articles(driver, query)
+    driver.get(f"https://www.dcard.tw/search?query={query}")
+    sleep(3)
+
+    urls = set()
+    for _ in range(10):  # Adjust this range as needed
+        scroll_down_page(driver, actions, 1)
+        new_urls = scrape_articles(driver)
+        urls.update(new_urls)
+        sleep(2)  # Adjust this sleep time as needed
+
     posts = scrape_article_details(driver, urls)
     driver.close()
     save_to_csv(posts, 'dcard_posts.csv')
 
 # Call the main function with the search query
 main("疫苗副作用") #Change this Keyword to query the data you want
+
+
+
+
+
